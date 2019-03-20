@@ -1,0 +1,84 @@
+#include <ESP8266WiFi.h>
+#include <FirebaseArduino.h>
+
+#define pin A0
+
+
+// Set these to run example.
+#define FIREBASE_HOST "fir-fbc03.firebaseio.com"
+#define FIREBASE_AUTH "SXDnfhquyM4Y7gjNJ175EegWv2kIREGdyOfsEtH9"
+#define WIFI_SSID "Anupriya"
+#define WIFI_PASSWORD "anupriya1"
+
+void setup() {
+ pinMode (pin, INPUT);
+  Serial.begin(9600);
+
+  // connect to wifi.
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("connecting");
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(500);
+  }
+  Serial.println();
+  Serial.print("connected: ");
+  Serial.println(WiFi.localIP());
+  
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+}
+
+
+void loop() 
+{
+
+
+   uint16_t value = analogRead (pin);
+  uint16_t range = get_gp2d12 (value);
+  float constant =190;
+  float displacement=constant-range;
+  float stiffness=295.27;
+  float load=displacement*stiffness;
+  float weight=load/9.81; 
+  Serial.print (weight);
+  Serial.println ("kg");
+  Serial.println ();
+  delay (500);
+  // set value
+  Firebase.setFloat("weight",weight);
+  // handle error
+  if (Firebase.failed()) {
+      Serial.print("setting /number failed:");
+      Serial.println(Firebase.error());  
+      return;
+  }
+  delay(1000);
+}
+uint16_t get_gp2d12 (uint16_t value) {
+  if (value < 10) value = 10;
+  return ((67870.0 / (value - 3.0)) - 40.0);
+/*  // set value
+  Firebase.setFloat("number", 42.0);
+  // handle error
+  if (Firebase.failed()) {
+      Serial.print("setting /number failed:");
+      Serial.println(Firebase.error());  
+      return;
+  }
+  delay(1000);
+  
+  // update value
+  Firebase.setFloat("number", 43.0);
+  // handle error
+  if (Firebase.failed()) {
+      Serial.print("setting /number failed:");
+      Serial.println(Firebase.error());  
+      return;
+  }
+  delay(1000);
+
+  // get value 
+  Serial.print("number: ");
+  Serial.println(Firebase.getFloat("number"));
+  delay(1000);*/
+}
